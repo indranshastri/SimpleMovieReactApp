@@ -3,10 +3,8 @@ import MainData  from "../../Data/MovieDetails.json";
 var data;
 var limit=10
 
-export function getMovies(limit){
-    let data = MainData;
-    limit = limit||10;
-    return  data.slice(0,limit)
+export function getMovies(){
+    return  MainData
 }
 
 export function getTotalCounts(){
@@ -19,3 +17,8 @@ export function deleteMovieAt(index){
     return data.slice(0,limit)
 }
 
+export function genere(index){
+    MainData.splice(index,1);
+    let data = MainData;
+    return data.slice(0,limit)
+}
