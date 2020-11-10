@@ -1,7 +1,5 @@
 import MainData  from "../../Data/MovieDetails.json";
 
-var data;
-var limit=10
 
 export function getMovies(){
     return  MainData
@@ -12,13 +10,9 @@ export function getTotalCounts(){
 }
 
 export function deleteMovieAt(index){
-    MainData.splice(index,1);
-    let data = MainData;
-    return data.slice(0,limit)
+    return MainData.splice(index,1);
 }
 
-export function genere(index){
-    MainData.splice(index,1);
-    let data = MainData;
-    return data.slice(0,limit)
+export function AllUniqueGenre(){
+   return MainData.map(e=>e["Major Genre"]).filter((e,i,self)=>e!==null && self.indexOf(e)===i);
 }
