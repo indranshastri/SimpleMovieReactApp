@@ -1,16 +1,19 @@
 import MainData  from "../../Data/MovieDetails.json";
 
+const currentData = [...MainData];
 
 export function getMovies(){
-    return  MainData
+    return  currentData
 }
 
 export function getTotalCounts(){
-    return MainData.length;
+    return currentData.length;
 }
 
-export function deleteMovieAt(index){
-    return MainData.splice(index,1);
+export function deleteMovie(ele){
+   // let index = ;
+   currentData.splice(currentData.indexOf(ele),1);
+    return currentData;
 }
 
 export function AllUniqueGenre(){

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 
 const Pagination = ({totalCount,perPage,onPageChange,currentPage}) => {
   const totalNumberPage = (perPage!==0)? Math.ceil(totalCount/perPage) : 0;
-  if(totalNumberPage===1) return null;
+  if(totalNumberPage<=1) return null;
   const pages = _.range(1,totalNumberPage+1);   
   
   

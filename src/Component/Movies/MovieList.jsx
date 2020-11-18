@@ -1,37 +1,40 @@
 import React, { Component } from 'react'
 import ListGroup from '../Common/listGroup/listGroup';
 import Pagination from '../Common/Pagination/Pagination';
-import Table from '../Common/Table/Table';
-import Liked from '../Liked/Liked';
+
+import MoviesTable from './MoviesTable';
+
 import { paginate } from '../utils/paginate';
+import _ from 'lodash'
 
 
+import {getMovies,deleteMovie,AllUniqueGenre} from "./Services";
 
-import {getMovies,getTotalCounts,deleteMovieAt,AllUniqueGenre} from "./Services";
 
 class MovieList extends Component {
     perPage = 5
     state = { 
-        movies:getMovies(this.perPage),
+        movies:[],
         pageSize:this.perPage,
         currentPage:1,
-        genre:AllUniqueGenre(),
-        currentGenre:'All Genre'
+        genre:[],
+        currentGenre:'All Genre',
+        sortColumn:{path:'Title',order:'asc'}
     }
-    colsToShow = [
-        "Title","Production Budget","Release Date","Major Genre","IMDB Rating","IMDB Votes"
-    ]
-    colHeader = [
-        "Title","Production Budget","Release Date","Major Genre","IMDB Rating","IMDB Votes","Fav","Action"
-    ]
+  
+    
     constructor(){
         super();
         this.handelDeleteClick = this.handelDeleteClick.bind(this);
         this.handelFavClick = this.handelFavClick.bind(this);
-        this.getRows = this.getRows.bind(this);
         this.handelPageChange = this.handelPageChange.bind(this);
+        this.handelSort = this.handelSort.bind(this);
     }
    
+    componentDidMount(){
+        const genre = ["All Genre", ...AllUniqueGenre()];
+        this.setState({movies:getMovies(this.perPage),genre})
+    }
    
     handelFavClick(ele){
         const movies = this.state.movies;
@@ -41,78 +44,58 @@ class MovieList extends Component {
     }
 
    
-    handelDeleteClick(index){
-       let movies = deleteMovieAt(index);
+    handelDeleteClick(ele){
+       let movies = deleteMovie(ele);
        this.setState({movies:movies})
     }
 
     handelPageChange = page =>this.setState({currentPage:page})
     
-    handelGenreClick = genre => {
-        this.setState({currentGenre:genre,currentPage:1});
-        
-    }
+    handelGenreClick = genre =>  this.setState({currentGenre:genre,currentPage:1});
     
-    getRows(filtered){
-        if(!filtered || filtered.length <= 0) return null
-       
-       return <tbody>
-                    {
-                        filtered.map((ele,index)=>{
-                           return (
-                                <tr key={index}>
-                                    { 
-                                        Object.entries(ele).map((value,index)=>{
-                                            return (this.colsToShow.includes(value[0]))? <td key={index}>{value[1]}</td>:null
-                                        })
-                                    }
-                                    <td>
-                                        <Liked onLiked={()=>this.handelFavClick(ele)} ele = {ele}/>
-                                    </td>
-                                    <td>
-                                        <button type="button" onClick={ () => this.handelDeleteClick(index)}  name="deleteMovie" id="deleteMovie" className="btn btn-danger btn-lg btn-block">
-                                          <i className="fa fa-trash"></i> 
-                                        </button>
-                                    </td>
-                                </tr>
-                            )
-                        })
-                    }
-                    
-                </tbody>
+    handelSort = sortColumn =>this.setState({sortColumn});
+
+    showingDetails(fromRecord,filteredCount,toRecord){
+        if(filteredCount===0) return <p> No reords found to show</p>;
+        return  <p> Showing {fromRecord} to {(filteredCount-toRecord)>=0?toRecord:filteredCount} of {filteredCount} records for movies</p>;
     }
 
-    componentDidMount(){
-        const genre =this.state.genre;
-        genre.unshift("All Genre");
-        this.setState({genre});
-    }
-    render() { 
-        const { length:count} = this.state.movies; 
-        const {movies,currentPage,pageSize,currentGenre} = this.state;
-        const fromRecord = currentPage===1?currentPage:(currentPage*pageSize)-(pageSize-1);
-        const toRecord = fromRecord+(pageSize-1);
-        const filtered = currentGenre==="All Genre"?movies: movies.filter(e=>e["Major Genre"]==currentGenre);
-        const rows = paginate(filtered,currentPage,pageSize);
+    getPageData = ()=>{
+        const {movies,currentPage,pageSize,currentGenre,sortColumn} = this.state;
+
+        const filtered = currentGenre==="All Genre"?movies: movies.filter(e=>e["Major Genre"]===currentGenre);
+        const sorted = _.orderBy(filtered,[sortColumn.path],[sortColumn.order]);
+        const rows = paginate(sorted,currentPage,pageSize);
         const filteredCount = filtered.length;
+        const fromRecord = filteredCount===0?0:currentPage===1?currentPage:(currentPage*pageSize)-(pageSize-1);
+        const toRecord = filteredCount===0?0:fromRecord+(pageSize-1);
+       
+        return {fromRecord,toRecord,filteredCount,rows}
+    }
+
+   
+    render() { 
+        const {currentPage,pageSize,sortColumn,genre} = this.state;
+        const {fromRecord,toRecord,filteredCount,rows} = this.getPageData();
         return ( 
             <div>
                 <div className="row">
                     <div className="col-md-2">             
-                        <ListGroup list={this.state.genre} onFilterClick={this.handelGenreClick} currentGenre={this.state.currentGenre} />
+                        <ListGroup list={genre} onFilterClick={this.handelGenreClick} currentGenre={this.state.currentGenre} />
                     </div>
                     <div className="col-md">
                         <h1> Movie List </h1>
-                        <p> Showing {fromRecord} to {(filteredCount-toRecord)>=0?toRecord:filteredCount} of {filteredCount} records for movies</p>
-                        <Table 
-                            details = {this.state.movies} 
-                            colHeader={this.colHeader}
-                            colsToShow = {this.colsToShow}
-                            >
-                            {this.getRows(rows)}
-                        </Table>
+                       { this.showingDetails(fromRecord,filteredCount,toRecord) }
+                       
+                        <MoviesTable
+                            rows = {rows}
+                            sortColumn={sortColumn}
+                            onLiked={this.handelFavClick}
+                            onDelete={this.handelDeleteClick}
+                            onSort={this.handelSort}
+                        />
                         <Pagination 
-                        totalCount={filtered.length} 
+                        totalCount={filteredCount} 
                         perPage={pageSize}
                         currentPage = {currentPage}
                         onPageChange ={this.handelPageChange} 
