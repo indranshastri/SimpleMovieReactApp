@@ -23,7 +23,7 @@ function App() {
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
             <Route path="/movies/new" component={MovieForm} />
-            <Route path="/movies/:id" component={MovieDetails} />
+            <Route path="/movies/:id" component={MovieForm} />
             <Route path="/movies" component={MovieList} />
             <Route path="/customers" component={Customers} />
             <Route path="/rental" component={Rental} />

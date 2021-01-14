@@ -1,7 +1,9 @@
 import React, { Component } from 'react'
 import Input from '../Input/Input';
+import Select from '../Select/Select';
 import Joi from 'joi-browser';
 import { result } from 'lodash';
+
 
 class From extends Component {
 
@@ -43,12 +45,12 @@ class From extends Component {
 
     handelSubmit= e=>{
         e.preventDefault();
-       const errors = this.validate();
-       if(errors){
-           this.setState({errors});
-           return null;
-       }
-       this.doSubmit();
+        const errors = this.validate();
+        if(errors){
+            this.setState({errors});
+            return null;
+        }
+        this.doSubmit();
     }
 
     renderInput=(type,name,label)=>{
@@ -63,17 +65,43 @@ class From extends Component {
                     />
     }
 
-    renderButton(label){
+    renderDropdown=(name,label,options,value="")=>{
+        const {data,errors} = this.state;
+       
+        return <Select 
+                    name={name} 
+                    selectedValue ={data[name]}
+                    options={options}
+                    label={label}
+                    error ={errors[name]}
+                    onChange ={this.handelChange}
+                    />
+    }
+
+    renderButton(label,type="button"){
     return  <button 
-                type="button" 
-                disabled={this.validate()}
+                type={type} 
                 className="btn btn-primary mt-2" 
                 role="button" 
-               > 
+            > 
                 { label}
             </button>
     }
+
+    checkValue(value){
+        if(value==null ||  value==undefined) return "";
+        return value;
+    }
    
+
+    changeToDate(date){
+        let formatedDate = new Date();
+        if(date!=undefined){
+            formatedDate = new Date(date);
+        }
+        
+        return formatedDate.getFullYear()+"-"+(formatedDate.getMonth()+1)+"-"+formatedDate.getDate();
+    }
 }
  
 export default From;

@@ -6,6 +6,7 @@ import MoviesTable from './MoviesTable';
 
 import { paginate } from '../utils/paginate';
 import _ from 'lodash'
+import { Link,NavLink } from "react-router-dom";
 
 
 import {getMovies,deleteMovie,AllUniqueGenre} from "./Services";
@@ -79,12 +80,18 @@ class MovieList extends Component {
         const {fromRecord,toRecord,filteredCount,rows} = this.getPageData();
         return ( 
             <div>
+               
                 <div className="row">
                     <div className="col-md-2">             
                         <ListGroup list={genre} onFilterClick={this.handelGenreClick} currentGenre={this.state.currentGenre} />
                     </div>
                     <div className="col-md">
-                        <h1> Movie List </h1>
+                        <div className="mb-3">
+                         <h1 className="pull-left"> Movie List </h1>
+                         <Link to="/movies/new" className="btn btn-primary pull-right mt-2" role="button">Add New Movie</Link>
+                        
+                        </div>
+                        <div className="clearfix"></div>                      
                        { this.showingDetails(fromRecord,filteredCount,toRecord) }
                        
                         <MoviesTable
