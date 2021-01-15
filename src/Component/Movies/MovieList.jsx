@@ -10,6 +10,7 @@ import { Link,NavLink } from "react-router-dom";
 
 
 import {getMovies,deleteMovie,AllUniqueGenre} from "./Services";
+import SearchBox from '../Common/SearchBox/SearchBox';
 
 
 class MovieList extends Component {
@@ -20,7 +21,8 @@ class MovieList extends Component {
         currentPage:1,
         genre:[],
         currentGenre:'All Genre',
-        sortColumn:{path:'Title',order:'asc'}
+        sortColumn:{path:'Title',order:'asc'},
+        searchQuery:''
     }
   
     
@@ -30,6 +32,8 @@ class MovieList extends Component {
         this.handelFavClick = this.handelFavClick.bind(this);
         this.handelPageChange = this.handelPageChange.bind(this);
         this.handelSort = this.handelSort.bind(this);
+        this.handelSearch = this.handelSearch.bind(this);
+        this.handelSearchClear = this.handelSearchClear.bind(this);
     }
    
     componentDidMount(){
@@ -52,9 +56,16 @@ class MovieList extends Component {
 
     handelPageChange = page =>this.setState({currentPage:page})
     
-    handelGenreClick = genre =>  this.setState({currentGenre:genre,currentPage:1});
+    handelGenreClick = genre =>  this.setState({searchQuery:"",currentGenre:genre,currentPage:1});
     
     handelSort = sortColumn =>this.setState({sortColumn});
+
+    handelSearch = query =>{
+        this.setState({searchQuery:query,currentGenre:null,currentPage:1})
+    }
+    handelSearchClear = () => {
+        this.setState({searchQuery:"",currentGenre:null,currentPage:1})
+    }
 
     showingDetails(fromRecord,filteredCount,toRecord){
         if(filteredCount===0) return <p> No reords found to show</p>;
@@ -62,9 +73,14 @@ class MovieList extends Component {
     }
 
     getPageData = ()=>{
-        const {movies,currentPage,pageSize,currentGenre,sortColumn} = this.state;
-
-        const filtered = currentGenre==="All Genre"?movies: movies.filter(e=>e["Major Genre"]===currentGenre);
+        const {movies,currentPage,pageSize,currentGenre,sortColumn,searchQuery} = this.state;
+    
+        let filtered = movies; 
+        if(searchQuery)
+            filtered = movies.filter(m=>m.Title.toLowerCase().startsWith(searchQuery.toLowerCase()));    
+        else if(currentGenre)
+            filtered = currentGenre==="All Genre"?movies: movies.filter(e=>e["Major Genre"]===currentGenre);
+        
         const sorted = _.orderBy(filtered,[sortColumn.path],[sortColumn.order]);
         const rows = paginate(sorted,currentPage,pageSize);
         const filteredCount = filtered.length;
@@ -93,7 +109,7 @@ class MovieList extends Component {
                         </div>
                         <div className="clearfix"></div>                      
                        { this.showingDetails(fromRecord,filteredCount,toRecord) }
-                       
+                       <SearchBox value={this.state.searchQuery} onChange={this.handelSearch} onClear={this.handelSearchClear} />
                         <MoviesTable
                             rows = {rows}
                             sortColumn={sortColumn}
