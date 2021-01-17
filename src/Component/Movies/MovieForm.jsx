@@ -1,7 +1,9 @@
 import Form from "../Common/Form/Form";
 import Joi from 'joi-browser';
 
-import { AllUniqueGenre, getMovies, saveData,getMovie } from "./Services";
+import {getMovies,saveData,getMovie} from "../../services/movieService";
+import {getGenres} from "../../services/genereService";
+import { exist } from "joi";
 
 
 class MovieForm extends Form {
@@ -10,78 +12,74 @@ class MovieForm extends Form {
             id:"",
             title: "",
             genre: "",
-            productionBugget: "",
-            releaseDate: "",
-            ImdbRating: "",
-            ImdbVotes: "",
+            numberInStock:"",
+            dailyRentalRate:""
         },
         genre: [],
         errors: ''
     };
 
     schema = {
-        id:Joi.number(),
+        id:Joi.string().allow(''),
 
         title: Joi.string()
             .min(3)
             .max(30)
             .required()
-            .label("Movie Title"),
+            .label("Title"),
 
         genre: Joi.string().required()
-            .label("Move genre"),
+            .label("Genre"),
 
-        productionBugget: Joi.number().required().min(0)
-            .label("Production Budget"),
+        numberInStock: Joi.number().required().min(0).max(100)
+            .label("Number In stock"),
 
-        releaseDate: Joi.string()
-            .required()
-            .label("Release Date"),
+        dailyRentalRate: Joi.number().required().min(0).max(10)
+            .label("Rating"),
 
-        ImdbRating: Joi.number().required().min(0).max(10)
-            .label("Imdb Rating"),
-
-        ImdbVotes: Joi.number().required().min(0)
-            .label("Imdb Votes"),
+        
 
     }
 
+    async populateGenre(){
+        const {data:genreData} = await getGenres();
+        const genre = [{"id":"",name:"All Genre"}, ...genreData];
+        this.setState({genre});
+    }
 
-    componentDidMount() {
-        let genre = [...AllUniqueGenre()];
-        genre = genre.map(
-            (value) => {
+    async populateMovie(){
+        try {
+            const movieId = this.props.match.params.id;
+            if(movieId == "new") return;
 
-                return { optValue: value, optLabel: value }
-            })
-        this.setState({ genre })
+            const {data:movie} = await getMovie(movieId);   
+            this.setState({data:this.mapToViewModel(movie)})  
+        } catch (error) {
+            if(error.response && error.response.status==404)
+                this.props.history.replace("/not-found");
+        }
+    }
 
-        const movieId = this.props.match.params.id;
-        if(movieId == "new") return;
-
-        const movie = getMovie(movieId);
-        if(!movie) return this.props.history.replace("/not-found");
-
-        this.setState({data:this.mapToViewModel(movie)})
+   async componentDidMount() {
+        await this.populateGenre();
+        await this.populateMovie();
     }
 
     mapToViewModel(movie){
+        
         return {
-            id:this.checkValue(movie.id),
-            title: this.checkValue(movie.Title),
-            genre: this.checkValue(movie["Major Genre"]),
-            productionBugget: this.checkValue(movie["Production Budget"]),
-            releaseDate: this.changeToDate(this.checkValue(movie["Release Date"])),
-            ImdbRating: this.checkValue(movie["IMDB Rating"]),
-            ImdbVotes: this.checkValue(movie["IMDB Votes"]),
+            id:this.checkValue(movie._id),
+            title: this.checkValue(movie.title),
+            genre: this.checkValue(movie.genre._id),
+            numberInStock:this.checkValue(movie.numberInStock),
+            dailyRentalRate:this.checkValue(movie.dailyRentalRate)
         }
     }
 
     doSubmit() {
-        const data = this.state.data
-        let relesedate = new Date(data.releaseDate);
-        relesedate = relesedate.toLocaleString('default', { month: 'short' }) + " " + relesedate.getDate() + " " + relesedate.getFullYear();
-        data.releaseDate = relesedate;
+        let { data,genre} = this.state
+        
+        data.genre = genre.filter(e=>e._id==data.genre)[0];
 
         saveData(this.ReverseMapData(data));
 
@@ -91,38 +89,29 @@ class MovieForm extends Form {
 
     ReverseMapData(data) {
         return {
-            "id":data.id,
-            "Title": data.title, 
-            "US Gross": null, 
-            "Worldwide Gross": null, 
-            "US DVD Sales": null, 
-            "Production Budget": data.productionBugget, 
-            "Release Date": data.releaseDate, 
-            "MPAA Rating": null, 
-            "Running Time min": null, 
-            "Distributor": null, 
-            "Source": null,
-             "Major Genre": data.genre, 
-             "Creative Type": null, 
-             "Director": null, 
-             "Rotten Tomatoes Rating": null, 
-             "IMDB Rating": data.ImdbRating, 
-             "IMDB Votes": data.ImdbVotes
+            "_id":data.id,
+            "title": data.title,
+            "genreId":data.genre._id,             
+            'numberInStock': data.numberInStock,           
+            'dailyRentalRate': data.dailyRentalRate,           
         }
     }
 
     render() {
-        let { genre } = this.state
+        const { genre } = this.state;
+        let genreOptions = genre.map(
+            values => {
+                return {optValue:values._id,optLabel:values.name}
+            }
+        )
         return (
             <div>
                 <h1>Movie From</h1>
                 <form onSubmit={this.handelSubmit}>
                     {this.renderInput("text", "title", "Movie Title")}
-                    {this.renderDropdown("genre", "Move genre", genre)}
-                    {this.renderInput("number", "productionBugget", "Production Bugget")}
-                    {this.renderInput("date", "releaseDate", "Release Date")}
-                    {this.renderInput("number", "ImdbRating", "Imdb Rating")}
-                    {this.renderInput("number", "ImdbVotes", "Imdb Votes")}
+                    {this.renderDropdown("genre", "Genre", genreOptions)}
+                    {this.renderInput("number", "numberInStock", "Number In Stock")}
+                    {this.renderInput("number", "dailyRentalRate", "Rating")}
                     {this.renderButton("Save", "submit")}
                 </form>
             </div>

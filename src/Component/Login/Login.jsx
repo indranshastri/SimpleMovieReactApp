@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
+import { Switch,Route,Redirect } from "react-router-dom";
 import Form from '../Common/Form/Form';
 import Joi from  'joi-browser';
+import auth from '../../services/authService';
 
 class Login extends  Form {
     state = { 
@@ -13,7 +15,7 @@ class Login extends  Form {
 
      schema = {
         username: Joi.string()
-                    .alphanum()
+                    .email()
                     .min(3)
                     .max(30)
                     .required()
@@ -27,13 +29,28 @@ class Login extends  Form {
      }
 
 
-    doSubmit(){
-        console.log("function after submit",this.state.data);
+    async doSubmit(){
+        try {
+            const {data} = this.state
+            await auth.login(data.username,data.password); 
+            const {state} = this.props.location; 
+            window.location = state ? state.from.pathname:"/";   
+        } catch (ex) {
+            console.log("ex",ex);
+            if(ex.response &&  ex.response.status === 400){
+                const errors = {...this.state.errors};
+                errors.username = ex.response.data;
+                this.setState({errors});
+            }
+        }
+       
     }
    
    
 
-    render() { 
+    render() {
+        if(auth.getCurrentUser()) return <Redirect to="/"/>
+
         return ( 
         <div>
             <h1>Login</h1>

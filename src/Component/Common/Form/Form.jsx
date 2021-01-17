@@ -44,12 +44,15 @@ class From extends Component {
     }
 
     handelSubmit= e=>{
+        
         e.preventDefault();
         const errors = this.validate();
+        
         if(errors){
             this.setState({errors});
             return null;
         }
+        
         this.doSubmit();
     }
 
